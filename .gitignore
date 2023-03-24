@@ -1,0 +1,17 @@
+# experiments
+*.npy
+wandb/
+*.out
+datasets/
+
+# dev
+.vscode
+__pycache__/
+*.pyc
+venv
+
+# build
+*.whl
+build/
+dist/
+*.egg-info/
