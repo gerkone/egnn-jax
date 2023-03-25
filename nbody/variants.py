@@ -32,10 +32,10 @@ class EGNNLayer_vel(EGNNLayer):
         graph: jraph.GraphsTuple,
         pos: jnp.ndarray,
         vel: jnp.ndarray,
-        node_attribute: Optional[jnp.ndarray] = None,
         edge_attribute: Optional[jnp.ndarray] = None,
-    ):
-        super().__call__(graph, pos, node_attribute, edge_attribute)
+        node_attribute: Optional[jnp.ndarray] = None,
+    ) -> jnp.ndarray:
+        super().__call__(graph, pos, edge_attribute, node_attribute)
         pos += self._vel_correction_mlp(graph.nodes) * vel
         return graph, pos
 
@@ -45,8 +45,23 @@ class EGNN_vel(EGNN):
         self,
         graph: jraph.GraphsTuple,
         pos: jnp.ndarray,
-        node_attribute: Optional[jnp.ndarray] = None,
+        vel: jnp.ndarray,
         edge_attribute: Optional[jnp.ndarray] = None,
+        node_attribute: Optional[jnp.ndarray] = None,
     ) -> Tuple[jnp.ndarray, jnp.ndarray]:
-        _, x = super().__call__(graph, pos, node_attribute, edge_attribute)
-        return x
+        # input node embedding
+        h = hk.Linear(self._hidden_size, name="embedding")(graph.nodes)
+        graph = graph._replace(nodes=h)
+        # message passing
+        for n in range(self._num_layers):
+            _, pos = EGNNLayer_vel(
+                layer_num=n,
+                hidden_size=self._hidden_size,
+                output_size=self._hidden_size,
+                act_fn=self._act_fn,
+                residual=self._residual,
+                attention=self._attention,
+                normalize=self._normalize,
+                tanh=self._tanh,
+            )(graph, pos, vel, edge_attribute, node_attribute)
+        return pos

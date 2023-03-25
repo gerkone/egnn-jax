@@ -126,8 +126,8 @@ class EGNNLayer(hk.Module):
         self,
         graph: jraph.GraphsTuple,
         pos: jnp.ndarray,
-        node_attribute: Optional[jnp.ndarray] = None,
         edge_attribute: Optional[jnp.ndarray] = None,
+        node_attribute: Optional[jnp.ndarray] = None,
     ) -> Tuple[jraph.GraphsTuple, jnp.ndarray]:
         """
         Apply EGNN layer.
@@ -135,14 +135,14 @@ class EGNNLayer(hk.Module):
         Args:
             graph: Graph from previous step
             pos: Node position, updated separately
-            node_attribute: Node attribute (optional)
             edge_attribute: Edge attribute (optional)
+            node_attribute: Node attribute (optional)
         """
         radial, coord_diff = self._coord2radial(graph, pos)
 
         graph = jraph.GraphNetwork(
-            update_node_fn=Partial(self._update, node_attribute),
             update_edge_fn=Partial(self._message, radial, edge_attribute),
+            update_node_fn=Partial(self._update, node_attribute),
             aggregate_edges_for_nodes_fn=self.msg_aggregate_fn,
         )(graph)
 
@@ -202,8 +202,8 @@ class EGNN(hk.Module):
         self,
         graph: jraph.GraphsTuple,
         pos: jnp.ndarray,
-        node_attribute: Optional[jnp.ndarray] = None,
         edge_attribute: Optional[jnp.ndarray] = None,
+        node_attribute: Optional[jnp.ndarray] = None,
     ) -> Tuple[jnp.ndarray, jnp.ndarray]:
         """
         Apply EGNN.
@@ -211,8 +211,8 @@ class EGNN(hk.Module):
         Args:
             graph: Input graph
             pos: Node position
-            node_attribute: Node attribute (optional)
             edge_attribute: Edge attribute (optional)
+            node_attribute: Node attribute (optional)
 
         Returns:
             Tuple of updated node features and positions
@@ -222,7 +222,7 @@ class EGNN(hk.Module):
         graph = graph._replace(nodes=h)
         # message passing
         for n in range(self._num_layers):
-            h, pos = EGNNLayer(
+            graph, pos = EGNNLayer(
                 layer_num=n,
                 hidden_size=self._hidden_size,
                 output_size=self._hidden_size,
@@ -231,7 +231,7 @@ class EGNN(hk.Module):
                 attention=self._attention,
                 normalize=self._normalize,
                 tanh=self._tanh,
-            )(graph, pos, node_attribute=node_attribute, edge_attribute=edge_attribute)
+            )(graph, pos, edge_attribute=edge_attribute, node_attribute=node_attribute)
         # node readout
         h = hk.Linear(self._output_size, name="readout")(graph.nodes)
         return h, pos
