@@ -27,32 +27,34 @@ class EGNNLayer(hk.Module):
     ):
         super().__init__(f"elayer_{layer_num}")
 
+        # message network
         self._edge_mlp = hk.nets.MLP(
             [hidden_size] * blocks + [hidden_size],
             activation=act_fn,
             activate_final=True,
         )
 
+        # update network
         self._node_mlp = hk.nets.MLP(
             [hidden_size] * blocks + [output_size],
             activation=act_fn,
             activate_final=False,
         )
 
-        net = [
-            hk.nets.MLP(
-                [hidden_size] * blocks + [1],
-                activation=act_fn,
-                activate_final=False,
-            )
+        # position update network
+        net = [hk.Linear(hidden_size)] * blocks
+        # NOTE: from https://github.com/vgsatorras/egnn/blob/main/models/gcl.py#L254
+        a = 0.001 * jnp.sqrt(6 / hidden_size)
+        net += [
+            act_fn,
+            hk.Linear(1, with_bias=False, w_init=hk.initializers.RandomUniform(-a, a)),
         ]
         if tanh:
             net.append(jax.nn.tanh)
-
         self._pos_mlp = hk.Sequential(net)
 
+        # attention
         self._attention_mlp = None
-
         if attention:
             self._attention_mlp = hk.nets.MLP(
                 [hidden_size, 1], activation=jax.nn.sigmoid, activate_final=True
@@ -71,8 +73,10 @@ class EGNNLayer(hk.Module):
         coord_diff: jnp.ndarray,
     ) -> jnp.ndarray:
         trans = coord_diff * self._pos_mlp(graph.edges)
+        # NOTE: was in the original code
+        trans = jnp.clip(trans, -100, 100)
         agg = self.pos_aggregate_fn(trans, graph.senders, num_segments=pos.shape[0])
-        return pos + agg
+        return agg
 
     def _message(
         self,
@@ -146,7 +150,7 @@ class EGNNLayer(hk.Module):
             aggregate_edges_for_nodes_fn=self.msg_aggregate_fn,
         )(graph)
 
-        pos = self._pos_update(pos, graph, coord_diff)
+        pos = pos + self._pos_update(pos, graph, coord_diff)
 
         return graph, pos
 

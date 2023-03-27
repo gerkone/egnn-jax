@@ -24,7 +24,7 @@ class EGNNLayer_vel(EGNNLayer):
         self._vel_correction_mlp = hk.nets.MLP(
             [hidden_size] * blocks + [1],
             activation=act_fn,
-            activate_final=True,
+            activate_final=False,
         )
 
     def __call__(
@@ -35,7 +35,7 @@ class EGNNLayer_vel(EGNNLayer):
         edge_attribute: Optional[jnp.ndarray] = None,
         node_attribute: Optional[jnp.ndarray] = None,
     ) -> jnp.ndarray:
-        super().__call__(graph, pos, edge_attribute, node_attribute)
+        graph, pos = super().__call__(graph, pos, edge_attribute, node_attribute)
         pos += self._vel_correction_mlp(graph.nodes) * vel
         return graph, pos
 
@@ -54,7 +54,7 @@ class EGNN_vel(EGNN):
         graph = graph._replace(nodes=h)
         # message passing
         for n in range(self._num_layers):
-            _, pos = EGNNLayer_vel(
+            graph, pos = EGNNLayer_vel(
                 layer_num=n,
                 hidden_size=self._hidden_size,
                 output_size=self._hidden_size,
