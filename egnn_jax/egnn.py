@@ -25,7 +25,7 @@ class EGNNLayer(hk.Module):
         tanh: bool = False,
         eps: float = 1e-8,
     ):
-        super().__init__(f"elayer_{layer_num}")
+        super().__init__(f"layer_{layer_num}")
 
         # message network
         self._edge_mlp = hk.nets.MLP(
@@ -47,7 +47,7 @@ class EGNNLayer(hk.Module):
         a = 0.001 * jnp.sqrt(6 / hidden_size)
         net += [
             act_fn,
-            hk.Linear(1, with_bias=False, w_init=hk.initializers.RandomUniform(-a, a)),
+            hk.Linear(1, with_bias=False, w_init=hk.initializers.TruncatedNormal(a)),
         ]
         if tanh:
             net.append(jax.nn.tanh)
@@ -56,8 +56,8 @@ class EGNNLayer(hk.Module):
         # attention
         self._attention_mlp = None
         if attention:
-            self._attention_mlp = hk.nets.MLP(
-                [hidden_size, 1], activation=jax.nn.sigmoid, activate_final=True
+            self._attention_mlp = hk.Sequential(
+                [hk.Linear(hidden_size), jax.nn.sigmoid]
             )
 
         self.pos_aggregate_fn = pos_aggregate_fn
@@ -75,8 +75,7 @@ class EGNNLayer(hk.Module):
         trans = coord_diff * self._pos_mlp(graph.edges)
         # NOTE: was in the original code
         trans = jnp.clip(trans, -100, 100)
-        agg = self.pos_aggregate_fn(trans, graph.senders, num_segments=pos.shape[0])
-        return agg
+        return self.pos_aggregate_fn(trans, graph.senders, num_segments=pos.shape[0])
 
     def _message(
         self,
@@ -123,7 +122,7 @@ class EGNNLayer(hk.Module):
         radial = jnp.sum(coord_diff**2, 1)[:, jnp.newaxis]
         if self._normalize:
             norm = jnp.sqrt(radial)
-            coord_diff = coord_diff / (norm + self.eps)
+            coord_diff = coord_diff / (norm + self._eps)
         return radial, coord_diff
 
     def __call__(

@@ -15,7 +15,6 @@ def NbodyGraphTransform(
     n_nodes: int,
     batch_size: int,
     neighbours: Optional[int] = 6,
-    relative_target: bool = False,
 ) -> Callable:
     """
     Build a function that converts torch DataBatch into jraph.GraphsTuple.
@@ -69,9 +68,6 @@ def NbodyGraphTransform(
             n_edge=jnp.array([len(senders) // cur_batch] * cur_batch),
             globals=None,
         )
-        # relative shift as target
-        if relative_target:
-            targets = targets - pos
 
         return (
             graph,
