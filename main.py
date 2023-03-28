@@ -98,7 +98,6 @@ def train(egnn, loader_train, loader_val, loader_test, graph_transform, args):
         train_start = time.perf_counter_ns()
         for data in loader_train:
             graph, props, target = graph_transform(data)
-            # normalize targets
             loss, params, opt_state = update_fn(
                 params=params,
                 graph=graph,
@@ -172,6 +171,8 @@ if __name__ == "__main__":
         output_size=args.hidden_size,
         num_layers=args.num_layers,
         residual=True,
+        normalize=args.normalize,
+        tanh=args.tanh,
     )(graph, pos, vel, edge_attribute)
 
     egnn = hk.without_apply_rng(hk.transform(egnn))

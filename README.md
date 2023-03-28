@@ -19,10 +19,10 @@ pip install --upgrade "jax[cuda]==0.4.1" -f https://storage.googleapis.com/jax-r
 ```
 
 ## Validation
-N-body (charged) is included for validation from the original paper. Times are  __model only__ on batches of 100 graphs, in (global) single precision. 
+N-body (charged) is included for validation from the original paper. Times are  __model only__ on batches of 100 graphs, in (global) single precision.
 |                  |  MSE  | Inference [ms]* |
 |------------------|-------|-----------------|
-| torch (original) | .0071 |                 |
+| torch (original) | .0071 |      0.94       |
 | jax (ours)       |       |                 |
 
 \* remeasured (Quadro RTX 4000)
