@@ -26,9 +26,7 @@ def mse(
     pred = model_fn(
         params,
         graph,
-        props["pos"],
-        props["vel"],
-        edge_attribute=props["edge_attribute"],
+        **props,
     )
     assert target.shape == pred.shape
     return (jnp.power(pred - target, 2)).mean()
@@ -173,6 +171,7 @@ if __name__ == "__main__":
         hidden_size=args.hidden_size,
         output_size=args.hidden_size,
         num_layers=args.num_layers,
+        residual=True,
     )(graph, pos, vel, edge_attribute)
 
     egnn = hk.without_apply_rng(hk.transform(egnn))
