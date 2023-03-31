@@ -9,8 +9,8 @@ import jax.numpy as jnp
 import jraph
 import optax
 
-from nbody.utils import setup_nbody_data
 from egnn_jax.variants import EGNN_vel
+from nbody.utils import setup_nbody_data
 
 key = jax.random.PRNGKey(1337)
 
@@ -67,11 +67,7 @@ def evaluate(
 
 def train(egnn, loader_train, loader_val, loader_test, graph_transform, args):
     init_graph, init_props, _ = graph_transform(next(iter(loader_train)))
-    params = egnn.init(
-        key,
-        init_graph,
-        **init_props
-    )
+    params = egnn.init(key, init_graph, **init_props)
 
     print(
         f"Starting {args.epochs} epochs on {args.dataset} "
