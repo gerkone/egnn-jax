@@ -10,7 +10,7 @@ import jraph
 import optax
 
 from nbody.utils import setup_nbody_data
-from nbody.variants import EGNN_vel
+from egnn_jax.variants import EGNN_vel
 
 key = jax.random.PRNGKey(1337)
 
@@ -70,9 +70,7 @@ def train(egnn, loader_train, loader_val, loader_test, graph_transform, args):
     params = egnn.init(
         key,
         init_graph,
-        init_props["pos"],
-        init_props["vel"],
-        init_props["edge_attribute"],
+        **init_props
     )
 
     print(
