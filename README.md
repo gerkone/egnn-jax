@@ -1,5 +1,5 @@
 # E(n) Equivariant GNN in jax
-Reimplementation of [EGNN](https://arxiv.org/abs/2102.09844) in jax. Original work by Victor Garcia Satorras, Emiel Hogeboom, Max Welling.
+Reimplementation of [EGNN](https://arxiv.org/abs/2102.09844) in jax. Original work by Victor Garcia Satorras, Emiel Hogeboom and Max Welling.
 
 ## Installation
 ```
@@ -11,7 +11,6 @@ Or clone this repository and build locally
 python -m pip install -e .
 ```
 
-
 ### GPU support
 Upgrade `jax` to the gpu version
 ```
@@ -22,8 +21,8 @@ pip install --upgrade "jax[cuda]==0.4.1" -f https://storage.googleapis.com/jax-r
 N-body (charged) is included for validation from the original paper. Times are  __model only__ on batches of 100 graphs, in (global) single precision.
 |                  |  MSE  | Inference [ms]* |
 |------------------|-------|-----------------|
-| torch (original) | .0071 |      0.94       |
-| jax (ours)       |       |                 |
+| torch (original) | .0071 |      8.27       |
+| jax (ours)       | .011  |      0.94       |
 
 \* remeasured (Quadro RTX 4000)
 
@@ -47,9 +46,8 @@ python3 -u generate_dataset.py --num-train=3000
 ```
 Then, the model can be trained and evaluated (from the repo root) with
 ```
-python main.py --epochs=200 --batch-size=100 --lr=5e-3 --weight-decay=1e-12
+python main.py --epochs=500 --batch-size=100 --lr=1e-4 --weight-decay=1e-8
 ```
-
 
 ## Acknowledgements
 This implementation is heavily inspired from the [original pytorch code](https://github.com/vgsatorras/egnn).
