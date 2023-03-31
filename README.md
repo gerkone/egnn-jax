@@ -14,7 +14,7 @@ python -m pip install -e .
 ### GPU support
 Upgrade `jax` to the gpu version
 ```
-pip install --upgrade "jax[cuda]==0.4.1" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
+pip install --upgrade "jax[cuda]==0.4.8" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
 ```
 
 ## Validation
@@ -50,4 +50,4 @@ python main.py --epochs=500 --batch-size=100 --lr=1e-4 --weight-decay=1e-8
 ```
 
 ## Acknowledgements
-This implementation is heavily inspired from the [original pytorch code](https://github.com/vgsatorras/egnn).
+This implementation heavily borrows from the [original pytorch code](https://github.com/vgsatorras/egnn).
