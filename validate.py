@@ -69,11 +69,8 @@ def train(egnn, loader_train, loader_val, loader_test, graph_transform, args):
     init_graph, init_props, _ = graph_transform(next(iter(loader_train)))
     params = egnn.init(key, init_graph, **init_props)
 
-    print(
-        f"Starting {args.epochs} epochs on {args.dataset} "
-        f"with {hk.data_structures.tree_size(params)} parameters.\n"
-        "Jitting..."
-    )
+    n_params = hk.data_structures.tree_size(params)
+    print(f"Starting {args.epochs} epochs on with {n_params} parameters.")
 
     opt_init, opt_update = optax.adamw(
         learning_rate=args.lr, weight_decay=args.weight_decay
@@ -135,13 +132,8 @@ if __name__ == "__main__":
     # model options
     parser.add_argument("--hidden-size", type=int, default=64)
     parser.add_argument("--num-layers", type=int, default=4)
-    parser.add_argument("--normalize", action="store_true")
-    parser.add_argument("--tanh", action="store_true")
 
     # data options
-    parser.add_argument(
-        "--dataset", type=str, default="charged", choices=["charged", "gravity"]
-    )
     parser.add_argument(
         "--dataset-name", type=str, default="small", choices=["small", "default"]
     )
@@ -152,7 +144,7 @@ if __name__ == "__main__":
     # training options
     parser.add_argument("--batch-size", type=int, default=100)
     parser.add_argument("--epochs", type=int, default=100)
-    parser.add_argument("--lr", type=float, default=5e-4)
+    parser.add_argument("--lr", type=float, default=1e-4)
     parser.add_argument("--weight-decay", type=float, default=1e-12)
     parser.add_argument("--val-freq", type=int, default=10)
 
@@ -165,8 +157,6 @@ if __name__ == "__main__":
         output_size=args.hidden_size,
         num_layers=args.num_layers,
         residual=True,
-        normalize=args.normalize,
-        tanh=args.tanh,
     )(graph, pos, vel, edge_attribute)
 
     egnn = hk.without_apply_rng(hk.transform(egnn))

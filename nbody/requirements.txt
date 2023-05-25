@@ -1,8 +1,8 @@
---find-links https://data.pyg.org/whl/torch-1.12.1+cpu.html
-torch==1.12.1
-torch-cluster==1.6.0
-torch-geometric==2.1.0
-torch-scatter==2.1.0
-torch-sparse==0.6.15
+--extra-index-url https://download.pytorch.org/whl/cpu
+
+--find-links https://data.pyg.org/whl/torch-1.13.1+cpu.html
+matplotlib>=3.4.2
+
+torch==1.13.1
 tqdm>=4.64.1
 wandb>=0.13.5
