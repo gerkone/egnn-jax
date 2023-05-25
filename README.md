@@ -23,7 +23,7 @@ N-body (charged) is included for validation from the original paper. Times are  
 |                  |  MSE  | Inference [ms]* |
 |------------------|-------|-----------------|
 | torch (original) | .0071 |      8.27       |
-| jax (ours)       | .011  |      0.94       |
+| jax (ours)       | .0093 |      0.94       |
 
 \* remeasured (Quadro RTX 4000)
 
@@ -46,7 +46,7 @@ python -u generate_dataset.py --num-train 3000 --seed 43 --sufix small
 ```
 Then, the model can be trained and evaluated with
 ```
-python validate.py --epochs=1000 --batch-size=100 --lr=1e-4 --weight-decay=1e-8
+python validate.py --epochs=1000 --batch-size=100 --lr=1e-4 --weight-decay=1e-12
 ```
 
 ## Acknowledgements

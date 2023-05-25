@@ -49,6 +49,7 @@ class NBodyDataset:
                     cols.append(j)
         edges = [rows, cols]
         # swap n_nodes <--> batch_size and add nf dimension
+        edge_attr = np.array(edge_attr)
         edge_attr = torch.Tensor(edge_attr).transpose(0, 1).unsqueeze(2)
 
         return (
