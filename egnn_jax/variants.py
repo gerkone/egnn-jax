@@ -6,6 +6,7 @@ import jax.numpy as jnp
 import jraph
 
 from egnn_jax import EGNN, EGNNLayer
+from egnn_jax.utils import LinearXav
 
 
 class EGNNLayer_vel(EGNNLayer):
@@ -15,17 +16,25 @@ class EGNNLayer_vel(EGNNLayer):
         *args,
         blocks: int = 1,
         act_fn: Callable = jax.nn.relu,
+        dt: float = 0.001,
         **kwargs,
     ):
         super().__init__(
-            hidden_size=hidden_size, blocks=blocks, act_fn=act_fn, *args, **kwargs
+            *args,
+            hidden_size=hidden_size,
+            blocks=blocks,
+            act_fn=act_fn,
+            dt=dt,
+            **kwargs,
         )
-
-        self._vel_correction_mlp = hk.nets.MLP(
-            [hidden_size] * blocks + [1],
-            activation=act_fn,
-            activate_final=False,
-        )
+        # velocity integrator network
+        net = [LinearXav(hidden_size)] * blocks
+        a = dt * jnp.sqrt(6 / hidden_size)
+        net += [
+            act_fn,
+            LinearXav(1, with_bias=False, w_init=hk.initializers.UniformScaling(a)),
+        ]
+        self._vel_correction_mlp = hk.Sequential(net)
 
     def __call__(
         self,
@@ -36,7 +45,8 @@ class EGNNLayer_vel(EGNNLayer):
         node_attribute: Optional[jnp.ndarray] = None,
     ) -> jnp.ndarray:
         graph, pos = super().__call__(graph, pos, edge_attribute, node_attribute)
-        pos += self._vel_correction_mlp(graph.nodes) * vel
+        shift = self._vel_correction_mlp(graph.nodes) * vel
+        pos = pos + jnp.clip(shift, -100, 100)
         return graph, pos
 
 
@@ -50,7 +60,7 @@ class EGNN_vel(EGNN):
         node_attribute: Optional[jnp.ndarray] = None,
     ) -> Tuple[jnp.ndarray, jnp.ndarray]:
         # input node embedding
-        h = hk.Linear(self._hidden_size, name="embedding")(graph.nodes)
+        h = LinearXav(self._hidden_size, name="embedding")(graph.nodes)
         graph = graph._replace(nodes=h)
         # message passing
         for n in range(self._num_layers):

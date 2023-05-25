@@ -8,13 +8,14 @@ python -m pip install egnn-jax
 
 Or clone this repository and build locally
 ```
+git clone https://github.com/gerkone/egnn-jax
+cd painn-jax
 python -m pip install -e .
 ```
-
 ### GPU support
 Upgrade `jax` to the gpu version
 ```
-pip install --upgrade "jax[cuda]==0.4.8" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
+pip install --upgrade "jax[cuda]==0.4.10" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
 ```
 
 ## Validation
@@ -35,18 +36,17 @@ git clone https://github.com/gerkone/egnn-jax
 
 They are adapted from the original implementation, so additionally `torch` and `torch_geometric` are needed (cpu versions are enough).
 ```
-pip3 install torch==1.12.1 --extra-index-url https://download.pytorch.org/whl/cpu
 python -m pip install -r nbody/requirements.txt
 ```
 
 ### Valdation usage
 The charged N-body dataset has to be locally generated in the directory [/nbody/data](/nbody/data).
 ```
-python3 -u generate_dataset.py --num-train=3000
+python -u generate_dataset.py --num-train 3000 --seed 43 --sufix small
 ```
-Then, the model can be trained and evaluated (from the repo root) with
+Then, the model can be trained and evaluated with
 ```
-python main.py --epochs=500 --batch-size=100 --lr=1e-4 --weight-decay=1e-8
+python validate.py --epochs=1000 --batch-size=100 --lr=1e-4 --weight-decay=1e-8
 ```
 
 ## Acknowledgements

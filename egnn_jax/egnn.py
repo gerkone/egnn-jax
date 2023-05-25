@@ -6,9 +6,27 @@ import jax.numpy as jnp
 import jraph
 from jax.tree_util import Partial
 
+from egnn_jax.utils import LinearXav, MLPXav
+
 
 class EGNNLayer(hk.Module):
-    """EGNN layer."""
+    """EGNN layer.
+
+    Args:
+        layer_num: layer number
+        hidden_size: hidden size
+        output_size: output size
+        blocks: number of blocks in the node and edge MLPs
+        act_fn: activation function
+        pos_aggregate_fn: position aggregation function
+        msg_aggregate_fn: message aggregation function
+        residual: whether to use residual connections
+        attention: whether to use attention
+        normalize: whether to normalize the coordinates
+        tanh: whether to use tanh in the position update
+        dt: position update step size
+        eps: small number to avoid division by zero
+    """
 
     def __init__(
         self,
@@ -23,41 +41,42 @@ class EGNNLayer(hk.Module):
         attention: bool = False,
         normalize: bool = False,
         tanh: bool = False,
+        dt: float = 0.001,
         eps: float = 1e-8,
     ):
         super().__init__(f"layer_{layer_num}")
 
         # message network
-        self._edge_mlp = hk.nets.MLP(
+        self._edge_mlp = MLPXav(
             [hidden_size] * blocks + [hidden_size],
             activation=act_fn,
             activate_final=True,
         )
 
         # update network
-        self._node_mlp = hk.nets.MLP(
+        self._node_mlp = MLPXav(
             [hidden_size] * blocks + [output_size],
             activation=act_fn,
             activate_final=False,
         )
 
         # position update network
-        net = [hk.Linear(hidden_size)] * blocks
+        net = [LinearXav(hidden_size)] * blocks
         # NOTE: from https://github.com/vgsatorras/egnn/blob/main/models/gcl.py#L254
-        a = 0.001 * jnp.sqrt(6 / hidden_size)
+        a = dt * jnp.sqrt(6 / hidden_size)
         net += [
             act_fn,
-            hk.Linear(1, with_bias=False, w_init=hk.initializers.TruncatedNormal(a)),
+            LinearXav(1, with_bias=False, w_init=hk.initializers.UniformScaling(a)),
         ]
         if tanh:
             net.append(jax.nn.tanh)
-        self._pos_mlp = hk.Sequential(net)
+        self._pos_correction_mlp = hk.Sequential(net)
 
         # attention
         self._attention_mlp = None
         if attention:
             self._attention_mlp = hk.Sequential(
-                [hk.Linear(hidden_size), jax.nn.sigmoid]
+                [LinearXav(hidden_size), jax.nn.sigmoid]
             )
 
         self.pos_aggregate_fn = pos_aggregate_fn
@@ -72,7 +91,7 @@ class EGNNLayer(hk.Module):
         graph: jraph.GraphsTuple,
         coord_diff: jnp.ndarray,
     ) -> jnp.ndarray:
-        trans = coord_diff * self._pos_mlp(graph.edges)
+        trans = coord_diff * self._pos_correction_mlp(graph.edges)
         # NOTE: was in the original code
         trans = jnp.clip(trans, -100, 100)
         return self.pos_aggregate_fn(trans, graph.senders, num_segments=pos.shape[0])
@@ -183,8 +202,7 @@ class EGNN(hk.Module):
             residual: Use residual connections, we recommend not changing this one
             attention: Whether using attention or not
             normalize: Normalizes the coordinates messages such that:
-                instead of: x^{l+1}_i = x^{l}_i + \sum(x_i - x_j)\phi_x(m_{ij})
-                use:        x^{l+1}_i = x^{l}_i + \sum(x_i - x_j)\phi_x(m_{ij})\|x_i - x_j\|
+                x^{l+1}_i = x^{l}_i + \sum(x_i - x_j)\phi_x(m_{ij})\|x_i - x_j\|
                 It may help in the stability or generalization. Not used in the paper.
             tanh: Sets a tanh activation function at the output of \phi_x(m_{ij}). It
                 bounds the output of \phi_x(m_{ij}) which definitely improves in
@@ -221,7 +239,7 @@ class EGNN(hk.Module):
             Tuple of updated node features and positions
         """
         # input node embedding
-        h = hk.Linear(self._hidden_size, name="embedding")(graph.nodes)
+        h = LinearXav(self._hidden_size, name="embedding")(graph.nodes)
         graph = graph._replace(nodes=h)
         # message passing
         for n in range(self._num_layers):
@@ -236,5 +254,5 @@ class EGNN(hk.Module):
                 tanh=self._tanh,
             )(graph, pos, edge_attribute=edge_attribute, node_attribute=node_attribute)
         # node readout
-        h = hk.Linear(self._output_size, name="readout")(graph.nodes)
+        h = LinearXav(self._output_size, name="readout")(graph.nodes)
         return h, pos
