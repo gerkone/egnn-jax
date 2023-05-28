@@ -63,10 +63,9 @@ class EGNNLayer(hk.Module):
         # position update network
         net = [LinearXav(hidden_size)] * blocks
         # NOTE: from https://github.com/vgsatorras/egnn/blob/main/models/gcl.py#L254
-        a = dt * jnp.sqrt(6 / hidden_size)
         net += [
             act_fn,
-            LinearXav(1, with_bias=False, w_init=hk.initializers.UniformScaling(a)),
+            LinearXav(1, with_bias=False, w_init=hk.initializers.UniformScaling(dt)),
         ]
         if tanh:
             net.append(jax.nn.tanh)

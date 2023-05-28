@@ -29,10 +29,9 @@ class EGNNLayer_vel(EGNNLayer):
         )
         # velocity integrator network
         net = [LinearXav(hidden_size)] * blocks
-        a = dt * jnp.sqrt(6 / hidden_size)
         net += [
             act_fn,
-            LinearXav(1, with_bias=False, w_init=hk.initializers.UniformScaling(a)),
+            LinearXav(1, with_bias=False, w_init=hk.initializers.UniformScaling(dt)),
         ]
         self._vel_correction_mlp = hk.Sequential(net)
 
