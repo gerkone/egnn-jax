@@ -23,7 +23,7 @@ N-body (charged) is included for validation from the original paper. Times are  
 |                  |  MSE  | Inference [ms]* |
 |------------------|-------|-----------------|
 | torch (original) | .0071 |      8.27       |
-| jax (ours)       | .0093 |      0.94       |
+| jax (ours)       | .0084 |      0.94       |
 
 \* remeasured (Quadro RTX 4000)
 
