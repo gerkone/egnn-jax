@@ -1,6 +1,7 @@
-from typing import Iterable, Optional
+from typing import Callable, Iterable, Optional
 
 import haiku as hk
+import jax.numpy as jnp
 
 
 class LinearXav(hk.Linear):
@@ -28,7 +29,7 @@ class MLPXav(hk.nets.MLP):
         with_bias: bool = True,
         w_init: Optional[hk.initializers.Initializer] = None,
         b_init: Optional[hk.initializers.Initializer] = None,
-        activation: Optional[hk.initializers.Initializer] = None,
+        activation: Callable[[jnp.ndarray], jnp.ndarray] = None,
         activate_final: bool = False,
         name: Optional[str] = None,
     ):
