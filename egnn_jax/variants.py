@@ -28,7 +28,7 @@ class EGNNLayer_vel(EGNNLayer):
             **kwargs,
         )
         # velocity integrator network
-        net = [LinearXav(hidden_size)] * blocks
+        net = [LinearXav(hidden_size) for _ in range(blocks)]
         net += [
             act_fn,
             LinearXav(1, with_bias=False, w_init=hk.initializers.UniformScaling(dt)),

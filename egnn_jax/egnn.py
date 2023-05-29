@@ -61,7 +61,7 @@ class EGNNLayer(hk.Module):
         )
 
         # position update network
-        net = [LinearXav(hidden_size)] * blocks
+        net = [LinearXav(hidden_size) for _ in range(blocks)]
         # NOTE: from https://github.com/vgsatorras/egnn/blob/main/models/gcl.py#L254
         net += [
             act_fn,
