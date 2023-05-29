@@ -4,6 +4,7 @@ import haiku as hk
 import jax
 import jax.numpy as jnp
 import jraph
+from haiku.initializers import UniformScaling
 
 from egnn_jax import EGNN, EGNNLayer
 from egnn_jax.utils import LinearXav
@@ -14,7 +15,6 @@ class EGNNLayer_vel(EGNNLayer):
         self,
         hidden_size: int,
         *args,
-        blocks: int = 1,
         act_fn: Callable = jax.nn.relu,
         dt: float = 0.001,
         **kwargs,
@@ -22,17 +22,13 @@ class EGNNLayer_vel(EGNNLayer):
         super().__init__(
             *args,
             hidden_size=hidden_size,
-            blocks=blocks,
             act_fn=act_fn,
             dt=dt,
             **kwargs,
         )
         # velocity integrator network
-        net = [LinearXav(hidden_size) for _ in range(blocks)]
-        net += [
-            act_fn,
-            LinearXav(1, with_bias=False, w_init=hk.initializers.UniformScaling(dt)),
-        ]
+        net = [LinearXav(hidden_size), act_fn]
+        net += [LinearXav(1, with_bias=False, w_init=UniformScaling(dt))]
         self._vel_correction_mlp = hk.Sequential(net)
 
     def __call__(

@@ -4,6 +4,7 @@ import haiku as hk
 import jax
 import jax.numpy as jnp
 import jraph
+from haiku.initializers import UniformScaling
 from jax.tree_util import Partial
 
 from egnn_jax.utils import LinearXav, MLPXav
@@ -61,12 +62,9 @@ class EGNNLayer(hk.Module):
         )
 
         # position update network
-        net = [LinearXav(hidden_size) for _ in range(blocks)]
+        net = [LinearXav(hidden_size), act_fn]
         # NOTE: from https://github.com/vgsatorras/egnn/blob/main/models/gcl.py#L254
-        net += [
-            act_fn,
-            LinearXav(1, with_bias=False, w_init=hk.initializers.UniformScaling(dt)),
-        ]
+        net += [LinearXav(1, with_bias=False, w_init=UniformScaling(dt))]
         if tanh:
             net.append(jax.nn.tanh)
         self._pos_correction_mlp = hk.Sequential(net)
